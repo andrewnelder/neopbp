@@ -1,0 +1,65 @@
+body {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 10px;
+}
+
+div#parameter-window
+{
+  text-align:center;
+  font-size: 40px;
+  width:800px; 
+  margin-right: auto; 
+  margin-left: auto; 
+  margin-top: 200px;
+}
+
+div#game-window
+{
+  width:800px; 
+  margin-right: auto; 
+  margin-left: auto;	
+}
+
+div#game-text {
+  width:800px;
+  height:250px;
+  color:#000;
+}
+
+div#game-post,
+div#reply-field {
+  width:800px;
+  height:200px;
+  text-align: right;	
+}
+
+.game-entry {
+	position:relative;
+	padding:15px;
+	margin-bottom: 3px;
+	border:5px solid #5a8f00;
+	color:#333;
+	background:#fff;
+	/* css3 */
+	-webkit-border-radius:10px;
+	-moz-border-radius:10px;
+	border-radius:10px;
+	width:760px;
+}
+
+.game-entry.system {
+	border:5px solid #0080FF;
+}
+
+.game-entry.to {
+	border:5px solid #FF0000;
+}
+
+.game-entry.from {
+	border:5px solid #FFCC33;
+}
+
+input.overlabel {
+  font-size: 30px;
+  width: 600px;
+}

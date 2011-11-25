@@ -1,0 +1,113 @@
+<html>
+<head>
+<title>Tester</title>
+<link href="./stylesheets/style.css" rel="stylesheet" />
+</head>
+<body>
+
+<!--  name selection -->
+<div id="parameter-window">
+<form id="parameter-form">
+    <label for="nickname-field">By what name shall ye be known?</label><br />
+    <input id="nickname-field" type="text" name="nickname" class="overlabel" />
+	<br />
+	<br />
+    <label for="gameid-field">Which realm do you seek?</label><br />
+    <input id="gameid-field" type="text" name="gameid" class="overlabel" />
+    <br />
+    <input type="submit" value="Enter" />
+</form>
+</div>
+<!-- /game selection -->
+
+<!-- game window -->
+<div id="game-window" style="display:none;">
+  <div id="game-text">
+  </div>
+  <div id="game-post">
+    <form id="reply-form">
+      <textarea id="reply-field" name="reply-field"></textarea><br/>
+      <input type="submit" value="Send Post">
+    </form>
+  </div>
+</div>
+<!-- /game window -->
+
+<script src="/socket.io/socket.io.js" type="text/javascript"></script>
+<script src="./lib/jquery.js" type="text/javascript"></script> 
+<script type="text/javascript">
+/*****************************************************************************
+ * Instantiation                                                             *
+ *****************************************************************************/
+
+var gameLog = $('#game-text')
+  , nickname = null
+  , gameid = null
+  , game = io.connect('http://localhost:8080/');
+
+/*****************************************************************************
+ * Functions                                                                 *
+ *****************************************************************************/
+
+function addGameEntry(txt, author) {
+  var author_type = 'from';
+  if (author == 'system') { author_type = 'system'; }
+  if (author == nickname) { author_type = 'to'; }
+  new_entry = '<div class="game-entry '+author_type+'">' + txt + 
+              '<br /><div class="game-entry-author">'+author+'</div></div>';
+  gameLog.append(new_entry);
+}
+
+
+/*****************************************************************************
+ * Response Handlers                                                         *
+ *****************************************************************************/
+
+/*
+ * 'joined' response
+ */
+game.on('joined', function(data) {
+	// connected message
+	addGameEntry(data['message'], data['author']);
+});
+ 
+/*
+ * 'message' response
+ */
+game.on('message', function(data) {
+	// message received
+	addGameEntry(data['message'], data['author']);
+});
+
+
+/*****************************************************************************
+ * Form Handlers                                                             *
+ *****************************************************************************/
+
+$('#parameter-form').submit(function(e) {
+  e.preventDefault();
+  nickname = $('#nickname-field').val();
+  gameid = $('#gameid-field').val();
+
+  // TODO: Add these validators back in after debugging.
+  //if (nickname && gameid && nickname != '' && gameid != '') {
+  $('#parameter-window').css('display', 'none');
+  $('#game-window').css('display', 'block');
+  game.emit('join game', {gid: gameid, nick: nickname});
+  //game.emit('set nickname', nickname)
+  
+  //}
+  
+});
+
+$('#reply-form').submit(function(e) {
+  e.preventDefault();
+  var message = $('textarea#reply-field').val();
+  game.emit('add game entry', {message: message, author: nickname});
+});
+
+addGameEntry('something', 'system');
+</script>
+
+</body>
+</html>
