@@ -1,11 +1,26 @@
-var app = require('http').createServer(handler)
-  , io = require('socket.io').listen(app)
-  , fs = require('fs')
+/*
+ * Regular Imports
+ */
+var fs = require('fs')
   , path = require('path')
-  , url = require("url")
-  , pattern = /(js|css|html)$/gi;
-  
+  , url = require("url");
+
+/*
+ * Create Socket.IO Client
+ */
+var app = require('http').createServer(handler)
+  , io = require('socket.io').listen(app);
 app.listen(8080);
+
+/*
+ * Create Redis (Database) Client
+ */
+var redis = require('redis')
+  , db = redis.createClient();
+
+db.on("error", function (err) {
+    console.log("Error " + err);
+});
 
 io.sockets.on('connection', function(socket) {
 
@@ -29,12 +44,22 @@ io.sockets.on('connection', function(socket) {
 	  socket.on('add game entry', function(data) {
 	    if (roomname) {
 	      socket.broadcast.to(roomname).emit('message', data);
-	      socket.emit('message', data)
+	      // TODO: process data and store in db
+	      data['message'] = nl2br(data['message'], false);
+	      socket.emit('message', data);
 	    } else {
 	      socket.emit('message', {message: 'You are not in a room.', author: 'system'});
 	    }
 	  });
 	});
+
+function nl2br (str, is_xhtml) {
+    var breakTag = '<br />';
+    if (typeof is_xhtml != 'undefined' && !is_xhtml) {
+        breakTag = '<br>';
+    }
+    return (str + '').replace(/([^>]?)\n/g, '$1'+ breakTag +'\n');
+}
 
 function handler (request, response) {
 
