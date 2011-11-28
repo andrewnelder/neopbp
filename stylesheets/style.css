@@ -1,9 +1,21 @@
+/*
+ * BODY + MENU
+ */
 body {
 	font-family: Verdana, Arial, Helvetica, sans-serif;
 	font-size: 10px;
 	margin: 0px 0px;
 }
 
+div#menu-bar {
+	background: #000000;
+	height: 30px;
+	margin-bottom: 5px;
+}
+
+/*
+ * REPLY BOX
+ */
 #reply-field {
 	width: 800px;
 	height: 30px;
@@ -23,13 +35,14 @@ body {
 	display: none;
 }
 
-div#menu-bar {
-	background: #000000;
-	height: 30px;
-	margin-bottom: 5px;
-}
+/*
+ * PARAMETER ENTRIES
+ */
 
-div#gameid-parameter-window,#nickname-parameter-window {
+div#gamename-parameter-window,
+#nickname-parameter-window,
+#gamepw-parameter-window,
+#creategame-parameter-window {
 	text-align: center;
 	font-size: 40px;
 	width: 800px;
@@ -38,9 +51,31 @@ div#gameid-parameter-window,#nickname-parameter-window {
 	margin-top: 200px;
 }
 
-div#nickname-parameter-window {
+div#creategame-parameter-window {
+	font-size: 40px;	
+}
+
+div#nickname-parameter-window,
+#gamepw-parameter-window,
+#creategame-parameter-window {
 	display: none;
 }
+
+input.overlabel {
+	font-size: 30px;
+	width: 600px;
+}
+
+div#gamepw-incorrect {
+	color: #FF0000;
+	font-size: 10px; 
+	background: #000000; 
+	display: none;
+}
+
+/*
+ * GAME WINDOW
+ */
 
 div#game-window {
 	width: 800px;
@@ -86,7 +121,7 @@ div#game-post {
 	border: 5px solid #FFCC33;
 }
 
-input.overlabel {
-	font-size: 30px;
-	width: 600px;
+.game-entry-author {
+	text-align: right;
+	color: #0080FF;
 }

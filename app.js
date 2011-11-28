@@ -3,7 +3,8 @@
  */
 var fs = require('fs')
   , path = require('path')
-  , url = require("url");
+  , url = require('url')
+  , crypto = require('crypto');
 
 /*
  * Create Socket.IO Client
@@ -19,39 +20,102 @@ var redis = require('redis')
   , db = redis.createClient();
 
 db.on("error", function (err) {
-    console.log("Error " + err);
+    console.log("[DB Error] " + err);
 });
 
 io.sockets.on('connection', function(socket) {
 
-	  var roomname = null
+	  var gameid = null
+	    , gamename = null
 	    , nickname = null;
+	  
+	  socket.on('request game', function(data) {
+		 // determine if a game exists or not and send a response
+		 db.exists('name:'+data['gamename'], function(err, exists) {
+			 if (exists) {
+				 db.get('name:'+data['gamename'], function(err, gameid) {
+					 socket.emit('game found', {gameid: gameid});
+				 });
+				 
+			 } else {
+				 socket.emit('game not found');
+			 }
+		 });
+	  });
+	  
+	  socket.on('create game', function(data) {
+		 db.exists('name:'+data['gamename'], function(err, exists) {
+			 if (!exists) {
+				 db.incr('gameid', function(err, gameid) {
+					 db.set('name:'+data['gamename'], ""+gameid, function() {
+						 db.get('name:'+data['gamename'], function(err, gameid) {
+							 socket.emit('game found', {gameid: gameid}); 
+						 });
+					 });
+				 });
+			 } else {
+				 db.get('name:'+data['gamename'], function(err, gameid) {
+					 socket.emit('game found', {gameid: gameid}); 
+				 });
+			 }
+		 });
+	  });
 	  
 	  socket.on('join game', function(data) {
 	    
-	    socket.join(data['gid']);
-	    roomname = data['gid'];
-	    nickname = data['nick'];
-	    
-	    // TODO: get the name of the room based on the id
-	    game_name = data['gid'];
+	    gameid = data['gameid'];
+	    gamename = data['gamename'];
+	    nickname = data['nickname'];
 
-	    socket.emit('joined', {message: "You have joined the game [" + game_name + "] as [" + nickname + "].", author: 'system'});
-	    socket.broadcast.to(roomname).emit('message', {message: nickname + ' joined the game.', author: 'system'});
-	  
-	  });
+	    socket.join(gameid);
+
+	    db.lrange('gameposts:'+gameid, 0, -1, function(err, all_keys) {
+	    	for (var i = 0; i < all_keys.length; i++) {
+	    		console.log(all_keys[i]);
+	    		db.get('post:'+all_keys[i], function(err, postData) {
+	    			postData = postData.split("<<>>");
+	    			author = fromCrypt(postData[0]);
+	    			message = fromCrypt(postData[1]);
+	    			socket.emit('message', {message: message, author: author});
+	    		});
+	    	}
+	    });
+	    socket.emit('joined', {message: "You have joined the game [" + gamename + "(" + gameid + ")" + "] as [" + nickname + "].", author: 'system'});
+	    socket.broadcast.to(gameid).emit('message', {message: nickname + ' joined the game.', author: 'system'});
 	    
+	  });
+	  
 	  socket.on('add game entry', function(data) {
-	    if (roomname) {
-	      socket.broadcast.to(roomname).emit('message', data);
-	      // TODO: process data and store in db
+	    if (gameid) {
 	      data['message'] = nl2br(data['message'], false);
+	      socket.broadcast.to(gameid).emit('message', data);
 	      socket.emit('message', data);
+	      db.incr('postid', function(err, postid) {
+	    	 db.set('post:'+postid, toCrypt(nickname) + "<<>>" + toCrypt(data['message']), function() {
+	    		 db.lpush('gameposts:'+gameid, postid, function() {
+	    			 console.log('Added post ['+postid+'] to game ['+gameid+'].');
+	    		 });
+	    	 }); 
+	      });
 	    } else {
 	      socket.emit('message', {message: 'You are not in a room.', author: 'system'});
 	    }
 	  });
 	});
+
+function toCrypt (text) {
+	var cipher = crypto.createCipher('des-ede3-cbc','s3cr37k3Y');
+	var crypted = cipher.update(text,'utf8','hex');
+	crypted += cipher.final('hex');
+	return crypted;
+}
+
+function fromCrypt (text) {
+	var decipher = crypto.createDecipher('des-ede3-cbc','s3cr37k3Y');
+	var decrypted = decipher.update(text,'hex','utf8');
+	decrypted += decipher.final('utf8');
+	return decrypted;
+}
 
 function nl2br (str, is_xhtml) {
     var breakTag = '<br />';
