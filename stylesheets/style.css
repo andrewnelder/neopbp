@@ -7,106 +7,57 @@ body {
 	margin: 0px 0px;
 }
 
-div#menu-bar {
-	background: #000000;
-	height: 30px;
-	margin-bottom: 5px;
-}
-
 /*
  * REPLY BOX
  */
 #reply-field {
-	width: 800px;
-	height: 30px;
-	border: solid 2px #006699;
-	font-size: 14px;
-}
-
-#cancel {
-	background-color: #dedede;
-	color: #000;
-	font-size: 13px;
-	padding: 4px;
-	margin-left: 10px;
-}
-
-#button_block {
-	display: none;
+  width: 800px; height: 30px;
+  border: solid 2px #006699;
+  font-size: 14px;
 }
 
 /*
  * PARAMETER ENTRIES
  */
-
-div#gamename-parameter-window,
-#nickname-parameter-window,
-#gamepw-parameter-window,
-#creategame-parameter-window {
-	text-align: center;
-	font-size: 40px;
-	width: 800px;
-	margin-right: auto;
-	margin-left: auto;
-	margin-top: 200px;
+.parameter-window {
+  text-align: center;
+  font-size: 40px;
+  width: 800px;
+  margin: 200px auto 0px auto;
+  display: none;
 }
 
-div#creategame-parameter-window {
-	font-size: 40px;	
-}
-
-div#nickname-parameter-window,
-#gamepw-parameter-window,
-#creategame-parameter-window {
-	display: none;
-}
-
-input.overlabel {
-	font-size: 30px;
-	width: 600px;
-}
-
-div#gamepw-incorrect {
-	color: #FF0000;
-	font-size: 10px; 
-	background: #000000; 
-	display: none;
+.label {
+  font-size: 30px;
+  width: 600px;
 }
 
 /*
  * GAME WINDOW
  */
-
-div#game-window {
-	width: 800px;
-	margin-right: auto;
-	margin-left: auto;
+#game-window {
+  width: 800px;
+  margin: 0px auto;
 }
 
-div#game-text {
-	width: 800px;
-	height: 250px;
-	color: #000;
+#game-text {
+  width: 800px; height: 250px;
+  color: #000;
 }
 
 div#game-post {
-	width: 800px;
-	text-align: right;
+  width: 800px;
+  text-align: right;
 }
 
 .game-entry {
-	position: relative;
-	padding: 15px;
-	margin-bottom: 3px;
-	border: 5px solid #5a8f00;
-	color: #333;
-	background: #fff;
-	/* css3 */
-	-webkit-border-radius: 10px;
-	-moz-border-radius: 10px;
-	border-radius: 10px;
-	width: 760px;
-	display: none;
+  width: 760px;
+  border: 5px solid #5a8f00;
+  padding: 15px;
+  margin-bottom: 3px;
+  color: #333;
+  background: #fff;
+  display: none;
 }
 
 .game-entry.system {
@@ -124,4 +75,12 @@ div#game-post {
 .game-entry-author {
 	text-align: right;
 	color: #0080FF;
+}
+
+.rounded-corners {
+  behavior: url(/css/border-radius.htc);
+  -moz-border-radius: 20px;
+  -webkit-border-radius: 20px;
+  -khtml-border-radius: 20px;
+  border-radius: 20px;
 }

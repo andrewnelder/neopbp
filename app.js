@@ -25,84 +25,183 @@ db.on("error", function (err) {
 
 io.sockets.on('connection', function(socket) {
 
-	  var gameid = null
-	    , gamename = null
-	    , nickname = null;
-	  
-	  socket.on('request game', function(data) {
-		 // determine if a game exists or not and send a response
-		 db.exists('name:'+data['gamename'], function(err, exists) {
-			 if (exists) {
-				 db.get('name:'+data['gamename'], function(err, gameid) {
-					 socket.emit('game found', {gameid: gameid});
-				 });
-				 
-			 } else {
-				 socket.emit('game not found');
-			 }
-		 });
-	  });
-	  
-	  socket.on('create game', function(data) {
-		 db.exists('name:'+data['gamename'], function(err, exists) {
-			 if (!exists) {
-				 db.incr('gameid', function(err, gameid) {
-					 db.set('name:'+data['gamename'], ""+gameid, function() {
-						 db.get('name:'+data['gamename'], function(err, gameid) {
-							 socket.emit('game found', {gameid: gameid}); 
-						 });
-					 });
-				 });
-			 } else {
-				 db.get('name:'+data['gamename'], function(err, gameid) {
-					 socket.emit('game found', {gameid: gameid}); 
-				 });
-			 }
-		 });
-	  });
-	  
-	  socket.on('join game', function(data) {
-	    
-	    gameid = data['gameid'];
-	    gamename = data['gamename'];
-	    nickname = data['nickname'];
+  var gameid = null
+  , gamename = null
+  , nickname = null
+  , gameinstance = null;
 
-	    socket.join(gameid);
+/*****************************************************************************
+ * Login and Game Creation                                                   *
+ *****************************************************************************/
 
-	    db.lrange('gameposts:'+gameid, 0, -1, function(err, all_keys) {
-	    	for (var i = 0; i < all_keys.length; i++) {
-	    		console.log(all_keys[i]);
-	    		db.get('post:'+all_keys[i], function(err, postData) {
-	    			postData = postData.split("<<>>");
-	    			author = fromCrypt(postData[0]);
-	    			message = fromCrypt(postData[1]);
-	    			socket.emit('message', {message: message, author: author});
-	    		});
-	    	}
-	    });
-	    socket.emit('joined', {message: "You have joined the game [" + gamename + "(" + gameid + ")" + "] as [" + nickname + "].", author: 'system'});
-	    socket.broadcast.to(gameid).emit('message', {message: nickname + ' joined the game.', author: 'system'});
-	    
-	  });
-	  
-	  socket.on('add game entry', function(data) {
-	    if (gameid) {
-	      data['message'] = nl2br(data['message'], false);
-	      socket.broadcast.to(gameid).emit('message', data);
-	      socket.emit('message', data);
-	      db.incr('postid', function(err, postid) {
-	    	 db.set('post:'+postid, toCrypt(nickname) + "<<>>" + toCrypt(data['message']), function() {
-	    		 db.lpush('gameposts:'+gameid, postid, function() {
-	    			 console.log('Added post ['+postid+'] to game ['+gameid+'].');
-	    		 });
-	    	 }); 
-	      });
-	    } else {
-	      socket.emit('message', {message: 'You are not in a room.', author: 'system'});
-	    }
-	  });
-	});
+  // The client has requested access to a particular game name.  Determine if
+  // it exists.  If it does, return the gameid.  Otherwise, trigger a game
+  // creation on the client.
+  //
+  // request: game name
+  //   gname   - the game name
+  // response: game name response
+  //   success - 0/1 if the game was successfuly found
+  //   gid     - the id of the game (optional)
+  //   message - any error or failure messages (optional)
+  socket.on('game name', function(data) {
+    gamename = ""+data['gname'];
+    db.exists('name:'+data['gname'], function(err, exists) {
+      if (exists) {
+        db.get('name:'+data['gname'], function(err, gid) {
+          gameid = ""+gid;
+          // FLAG: join might have a callback
+          socket.join(gameid);
+          socket.emit('game name response', {success: true, gid: gid});
+        });
+      } else {
+        socket.emit('game name response', {success: false, message: 'A game by that name already exists.'});
+      }
+    });
+  }); // game name
 
+  // The client has requested to create a game.  Determine if the game already
+  // exists.  If the game does not already exist, create it and return gid.
+  // If it already exists, then trigger game selection screen on the client.
+  //
+  // TODO: Add password support!
+  //
+  // request: game create
+  //   gname   - the game name
+  //   ppass   - the player password
+  //   dpass   - the dungeon-master password
+  // response: game create response
+  //   success - 0/1 if the game was successfully created
+  //   gid     - the id of the game (optional)
+  //   message - any error or failure messages (optional)
+  socket.on('game create', function(data) {
+    gamename = ""+data['gname'];
+    db.exists('name:'+data['gname'], function(err, exists) {
+      if (!exists) {
+        db.incr('gameid', function(err, gid) {
+          db.set('name:'+data['gname'], ""+gid, function() {
+            db.get('name:'+data['gname'], function(err, gid) {
+              gameid = ""+gid;
+              // FLAG: join might have a callback
+              socket.join(gameid);
+              socket.emit('game create response', {success: true, gid: gid});
+            });
+          });
+        });
+      } else {
+        db.get('name:'+data['gname'], function(err, gid) {
+          socket.emit('game create response', {success: false, message: 'A game by that name already exists.');
+        });
+      }
+    });
+  }); // game create
+
+  // The client has requested a nickname.  Return receipt to client.
+  //
+  // NOTE: Thie will eventually need to be modified to include a relationship
+  //       between a logged-in account and a username.
+  //
+  // request: nickname
+  //   nick    - the nickname
+  // response: nickname response
+  //   success - 0/1 if the name was successfully received
+  //   nick    - altered/unaltered nickname if name was found already (optional)
+  //   message - any error or failure messages (optional)
+  socket.on('nickname', function(data) {
+    nickname = data['nick'];
+    socket.emit('nickname response', {success: true, nick: nickname});
+  }); // nickname
+
+  // The client has sent either the player- or dm-password to be validated.
+  //
+  // TODO: Incorporate password support.  Currently sends acknowledged as
+  //       a player.
+  //
+  // request: password
+  //   pass    - the password
+  // response: password response
+  //   success - 0/1 if password is correct
+  //   urole   - the user-role (0 - player, 1 - dm)
+  socket.on('password', function(data) {
+    var encrypted_pass = toCrypt(data['pass']);
+    socket.emit('password response', {success: true, urole: 0});
+  }); // password
+
+/*****************************************************************************
+ * Messaging                                                                 *
+ *****************************************************************************/
+
+  // The client has requested that a message be added to the game log.  There
+  // are no rules or requirements for the size/shape of this message; however,
+  // it may contain special flags for parsing.
+  //
+  // This function is also responsible for storing the message in the database.
+  //
+  // request: message
+  //   contents - the message contents
+  //   urole    - the user-role (0 - player, 1 - dm)
+  // response: message
+  //   contents - the modified message contents
+  //   author   - nickname of author
+  //   
+  socket.on('message', function(data) {
+    var formatted_contents = processMessage(data['contents']);
+    if (gameid) {
+      db.incr('postid', function(err, postid) {
+        db.set('post:'+postid, toCrypt(nickname) + "<<>>" + toCrypt(formatted_contents), function() {
+          db.lpush('gameposts:'+gameid, postid, function() {
+            socket.broadcast.to(gameid).emit('message', {contents: formatted_contents, author: nickname});
+            socket.emit('message', {contents: formatted_contents, author: nickname});
+            console.log('Added post ['+postid+'] to game ['+gameid+'].');
+          });
+        }); 
+      });
+    }
+  }); // message
+
+  // The client has attempted to send a user a private message.
+  //
+  // TODO: This is a later feature.  Not sure what the requirements are on
+  //       the code.  Address request/response messages.
+  socket.on('private message', function(data) {
+    // do something
+  }); // private message
+
+  // The client has requested the recorded game log and history.
+  //
+  // TODO: Convert this from straight movement to a batched upload and make
+  //       sure the client is blocking.  That way no messages will be missed.
+  //
+  // request: game log
+  // response: message(s) [many responses will be sent]
+  //   contents - the formatted message contents
+  //   author   - the nickname of the author
+  socket.on('game log', function(data) {
+    db.lrange('gameposts:'+gameid, 0, -1, function(err, all_keys) {
+      for (var i = 0; i < all_keys.length; i++) {
+        console.log(all_keys[i]);
+        db.get('post:'+all_keys[i], function(err, postData) {
+          postData = postData.split("<<>>");
+          author = fromCrypt(postData[0]);
+          message = fromCrypt(postData[1]);
+          socket.emit('message', {contents: message, author: author});
+        });
+      }
+    });
+  }); // game log
+}); // socket listener
+
+/*****************************************************************************
+ * Functions                                                                 *
+ *****************************************************************************/
+
+// Formats a message's contents to be HTML friendly.
+function processMessage (text) {
+  text = nl2br(text, false);
+  return text;
+}
+
+// Encrypts a piece of text.
 function toCrypt (text) {
 	var cipher = crypto.createCipher('des-ede3-cbc','s3cr37k3Y');
 	var crypted = cipher.update(text,'utf8','hex');
@@ -110,6 +209,7 @@ function toCrypt (text) {
 	return crypted;
 }
 
+// Decrypts a piece of text.
 function fromCrypt (text) {
 	var decipher = crypto.createDecipher('des-ede3-cbc','s3cr37k3Y');
 	var decrypted = decipher.update(text,'hex','utf8');
@@ -117,6 +217,7 @@ function fromCrypt (text) {
 	return decrypted;
 }
 
+// Replaces new-line characters with html-breaks.
 function nl2br (str, is_xhtml) {
     var breakTag = '<br />';
     if (typeof is_xhtml != 'undefined' && !is_xhtml) {
@@ -125,35 +226,33 @@ function nl2br (str, is_xhtml) {
     return (str + '').replace(/([^>]?)\n/g, '$1'+ breakTag +'\n');
 }
 
-function handler (request, response) {
+/*****************************************************************************
+ * Web-request Handler                                                       *
+ *****************************************************************************/
 
-	var uri = url.parse(request.url).pathname
+function handler (request, response) {
+  var uri = url.parse(request.url).pathname
     , filename = path.join(process.cwd(), uri)
-	, game_id = null;
-  
+    , game_id = null;
+
   path.exists(filename, function(exists) {
-    if(!exists) {
-      
+    if(!exists) {         // throw 404 if nothing is found
       response.writeHead(404, {"Content-Type": "text/plain"});
       response.write("404 Not Found\n");
       response.end();
-      
-    } else {
-
-		if (fs.statSync(filename).isDirectory()) filename += '/index.html';
-		
-	    fs.readFile(filename, "binary", function(err, file) {
-	      if(err) {        
-	        response.writeHead(500, {"Content-Type": "text/plain"});
-	        response.write(err + "\n");
-	        response.end();
-	      } else {
-	        response.writeHead(200);
-	        response.write(file, "binary");
-	        response.end();
-	      }
-	    });
+    } else {              // otherwise render normally
+      if (fs.statSync(filename).isDirectory()) filename += '/index.html';
+        fs.readFile(filename, "binary", function(err, file) {
+        if(err) {         // unknown file
+          response.writeHead(500, {"Content-Type": "text/plain"});
+          response.write(err + "\n");
+          response.end();
+        } else {          // static file
+          response.writeHead(200);
+          response.write(file, "binary");
+          response.end();
+        }
+      });
     }
   });
-
 }
