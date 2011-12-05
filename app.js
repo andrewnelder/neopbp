@@ -25,7 +25,7 @@ db.on("error", function (err) {
 
 io.sockets.on('connection', function(socket) {
 
-  var gameid = null
+var gameid = null
   , gamename = null
   , nickname = null
   , gameinstance = null;
@@ -46,16 +46,16 @@ io.sockets.on('connection', function(socket) {
   //   message - any error or failure messages (optional)
   socket.on('game name', function(data) {
     gamename = ""+data['gname'];
-    db.exists('name:'+data['gname'], function(err, exists) {
+    db.exists('name:'+gamename, function(err, exists) {
       if (exists) {
-        db.get('name:'+data['gname'], function(err, gid) {
+        db.get('name:'+gamename, function(err, gid) {
           gameid = ""+gid;
           // FLAG: join might have a callback
           socket.join(gameid);
-          socket.emit('game name response', {success: true, gid: gid});
+          socket.emit('game name acknowledged', {success: true, gid: gid, gname: gamename});
         });
       } else {
-        socket.emit('game name response', {success: false, message: 'A game by that name already exists.'});
+        socket.emit('game name acknowledged', {success: false, message: 'A game by that name already exists.'});
       }
     });
   }); // game name
@@ -76,21 +76,21 @@ io.sockets.on('connection', function(socket) {
   //   message - any error or failure messages (optional)
   socket.on('game create', function(data) {
     gamename = ""+data['gname'];
-    db.exists('name:'+data['gname'], function(err, exists) {
+    db.exists('name:'+gamename, function(err, exists) {
       if (!exists) {
         db.incr('gameid', function(err, gid) {
-          db.set('name:'+data['gname'], ""+gid, function() {
-            db.get('name:'+data['gname'], function(err, gid) {
+          db.set('name:'+gamename, ""+gid, function() {
+            db.get('name:'+gamename, function(err, gid) {
               gameid = ""+gid;
-              // FLAG: join might have a callback
+              // TODO: join might have a callback
               socket.join(gameid);
-              socket.emit('game create response', {success: true, gid: gid});
+              socket.emit('game create acknowledged', {success: true, gid: gid, gname: gamename});
             });
           });
         });
       } else {
-        db.get('name:'+data['gname'], function(err, gid) {
-          socket.emit('game create response', {success: false, message: 'A game by that name already exists.');
+        db.get('name:'+gamename, function(err, gid) {
+          socket.emit('game create acknowledged', {success: false, message: 'A game by that name already exists.'});
         });
       }
     });
@@ -109,7 +109,7 @@ io.sockets.on('connection', function(socket) {
   //   message - any error or failure messages (optional)
   socket.on('nickname', function(data) {
     nickname = data['nick'];
-    socket.emit('nickname response', {success: true, nick: nickname});
+    socket.emit('nickname acknowledged', {success: true, nick: nickname});
   }); // nickname
 
   // The client has sent either the player- or dm-password to be validated.
@@ -122,9 +122,9 @@ io.sockets.on('connection', function(socket) {
   // response: password response
   //   success - 0/1 if password is correct
   //   urole   - the user-role (0 - player, 1 - dm)
-  socket.on('password', function(data) {
+  socket.on('gamepw', function(data) {
     var encrypted_pass = toCrypt(data['pass']);
-    socket.emit('password response', {success: true, urole: 0});
+    socket.emit('gamepw acknowledged', {success: true, urole: 0});
   }); // password
 
 /*****************************************************************************
@@ -154,7 +154,7 @@ io.sockets.on('connection', function(socket) {
             socket.emit('message', {contents: formatted_contents, author: nickname});
             console.log('Added post ['+postid+'] to game ['+gameid+'].');
           });
-        }); 
+        });
       });
     }
   }); // message
