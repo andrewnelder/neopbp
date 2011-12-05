@@ -177,6 +177,7 @@ var gameid = null
   //   contents - the formatted message contents
   //   author   - the nickname of the author
   socket.on('game log', function(data) {
+    socket.broadcast.emit('user joined', {nick: nickname});
     db.lrange('gameposts:'+gameid, 0, -1, function(err, all_keys) {
       for (var i = 0; i < all_keys.length; i++) {
         console.log(all_keys[i]);
@@ -184,6 +185,7 @@ var gameid = null
           postData = postData.split("<<>>");
           author = fromCrypt(postData[0]);
           message = fromCrypt(postData[1]);
+          // TODO: Messages are being added in reverse.
           socket.emit('message', {contents: message, author: author});
         });
       }
