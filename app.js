@@ -179,7 +179,7 @@ var gameid = null
   socket.on('game log', function(data) {
     socket.broadcast.emit('user joined', {nick: nickname});
     db.lrange('gameposts:'+gameid, 0, -1, function(err, all_keys) {
-      for (var i = 0; i < all_keys.length; i++) {
+      for (var i = all_keys.length-1; i >= 0; i--) {
         console.log(all_keys[i]);
         db.get('post:'+all_keys[i], function(err, postData) {
           postData = postData.split("<<>>");
