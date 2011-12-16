@@ -77,6 +77,20 @@ div#game-post {
 	color: #0080FF;
 }
 
+.pm {
+  color: #FFF;
+  background-color: #0080FF;
+}
+
+.spoiler {
+  color: #000;
+  background-color: #000;
+}
+
+.spoiler:hover {
+  background-color: #FFF;
+}
+
 .rounded-corners {
   behavior: url(/css/border-radius.htc);
   -moz-border-radius: 20px;
