@@ -91,6 +91,10 @@ div#game-post {
   background-color: #FFF;
 }
 
+.ooc {
+  color: #FF0000;
+}
+
 .rounded-corners {
   behavior: url(/css/border-radius.htc);
   -moz-border-radius: 20px;
