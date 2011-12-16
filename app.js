@@ -203,6 +203,39 @@ function processMessage (text) {
   return text;
 }
 
+// Replaces <roll:[]> tags with the roll scores.
+function rollDice (equation) {
+  var str = "3d10 + 50d13 - 30d12 + 20";
+  var dicepattern = /([+-]){0,1}[ ]{0,1}([0-9]+)[Dd]{0,1}([0-9]+){0,1}/gi;
+
+  var dicerolls = [];
+  var modifiers = [];
+
+  var match = 1;
+  while (match != null) {
+    match = dicepattern.exec(str);
+
+    var mod = 1;
+    if (match[1] == '-') {
+      mod = -1;
+    }
+
+    if (match[3] != null) {
+      for (var multidx = 0; multidx < parseInt(match[2]); multidx++) {
+        dicerolls = dicerolls.concat([Math.floor(Math.random()*parseInt(match[3]))+1]);
+      }
+    } else {
+      modifiers = modifiers.concat([mod*parseInt(match[2])]);
+    }
+
+  }
+
+  return {dicerolls: dicerolls, modifiers: modifiers};
+
+}
+
+// Replaces <pm:[name]></pm> with a private message
+
 // Encrypts a piece of text.
 function toCrypt (text) {
 	var cipher = crypto.createCipher('des-ede3-cbc','s3cr37k3Y');
