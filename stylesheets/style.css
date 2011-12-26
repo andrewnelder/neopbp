@@ -7,6 +7,10 @@ body {
 	margin: 0px 0px;
 }
 
+#menu-bar {
+  height: 200px;
+}
+
 /*
  * REPLY BOX
  */
@@ -93,6 +97,50 @@ div#game-post {
 
 .ooc {
   color: #FF0000;
+}
+
+/*
+ * User Listing
+ */
+ 
+#button {
+  display: none;
+  width: 200px;
+  margin: auto;
+/*  border:1px solid #1c1c1c;*/
+  float: left;
+}
+
+ul, li {
+  margin:0;
+  padding:0;
+  list-style:none;
+}
+
+.dropdown-class {
+
+}
+
+.dropdown {
+	display: none;
+	border: 1px solid #1c1c1c;
+}
+
+.dropdown li {
+	background-color: #302f2f;
+}
+
+.dropdown li a {
+	color:#FFFFFF; 
+	text-decoration:none; 
+	padding:10px; 
+	display:block;
+}
+
+.dropdown li a:hover {
+	padding:10px;
+	font-weight:bold;
+	color: #F00880;
 }
 
 .rounded-corners {

@@ -3,6 +3,7 @@
 <head>
 <title>neopbp - Not Play-by-Post Gaming</title>
 <link href="./stylesheets/style.css" rel="stylesheet" />
+<link href="./stylesheets/buttons.css" rel="stylesheet" />
 <link href="./stylesheets/libnotify.css" rel="stylesheet" />
 <meta http-equiv="Cache-Control" content="max-age=0" />
 <meta http-equiv="Cache-Control" content="no-cache" />
@@ -14,12 +15,17 @@
 <script type="text/javascript" src="./lib/humane.min.js"></script>
 <script type="text/javascript" src="./lib/client.js"></script>
 <script type="text/javascript" src="./lib/general.js"></script>
+<script type="text/javascript" src="./lib/slider.js"></script>
 </head>
 <body>
 
 <!-- menu bar -->
-<div id="menu-bar" style="height: 30px; background: #000; margin-bottom: 5px;"></div>
-
+<div id="menu-bar" style="height: 30px; background: #000; padding: 5px; margin-bottom: 5px;">
+  <div id="button">
+    <a href="#" class="button dropdown-class">Active Users</a>
+    <ul id="active-user-list" class="dropdown"></ul>
+  </div>
+</div>
 
 <!-- game selection screen -->
 <div id="gamename-parameter-window" class="parameter-window" style="display: block;">
@@ -115,7 +121,6 @@
     </center>
   </form>
 </div>
-
 
 <!-- game screen -->
 <div id="game-window" style="display: none;">

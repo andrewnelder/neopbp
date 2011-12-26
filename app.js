@@ -109,7 +109,10 @@ var gameid = null
   //   message - any error or failure messages (optional)
   socket.on('nickname', function(data) {
     nickname = data['nick'];
-    socket.emit('nickname acknowledged', {success: true, nick: nickname});
+    socket.set('nickname', nickname, function() {
+      socket.emit('nickname acknowledged', {success: true, nick: nickname});
+      socket.$emit('aul');
+    });
   }); // nickname
 
   // The client has sent either the player- or dm-password to be validated.
@@ -143,7 +146,7 @@ var gameid = null
   // response: message
   //   contents - the modified message contents
   //   author   - nickname of author
-  //   
+  //
   socket.on('message', function(data) {
     var formatted_contents = processMessage(data['contents']);
     if (gameid) {
@@ -152,20 +155,13 @@ var gameid = null
           db.lpush('gameposts:'+gameid, postid, function() {
             socket.broadcast.to(gameid).emit('message', {contents: formatted_contents, author: nickname});
             socket.emit('message', {contents: formatted_contents, author: nickname});
+            socket.$emit('aul');
             console.log('Added post ['+postid+'] to game ['+gameid+'].');
           });
         });
       });
     }
   }); // message
-
-  // The client has attempted to send a user a private message.
-  //
-  // TODO: This is a later feature.  Not sure what the requirements are on
-  //       the code.  Address request/response messages.
-  socket.on('private message', function(data) {
-    // do something
-  }); // private message
 
   // The client has requested the recorded game log and history.
   //
@@ -177,7 +173,6 @@ var gameid = null
   //   contents - the formatted message contents
   //   author   - the nickname of the author
   socket.on('game log', function(data) {
-    socket.broadcast.emit('user joined', {nick: nickname});
     db.lrange('gameposts:'+gameid, 0, -1, function(err, all_keys) {
       for (var i = all_keys.length-1; i >= 0; i--) {
         console.log(all_keys[i]);
@@ -185,12 +180,28 @@ var gameid = null
           postData = postData.split("<<>>");
           author = fromCrypt(postData[0]);
           message = fromCrypt(postData[1]);
-          // TODO: Messages are being added in reverse.
           socket.emit('message', {contents: message, author: author});
         });
       }
     });
   }); // game log
+
+  socket.on('aul', function() {
+    var userlist = io.sockets.in(gameid).clients();
+
+    var aul = '';
+    for (var uidx = 0; uidx < userlist.length; uidx++) {
+      userlist[uidx].get('nickname', function(err, nick) {
+        console.log(nick);
+        aul += nick;
+        if (uidx != userlist.length - 1) {
+          aul += '<<>>';
+        }
+      });
+    }
+    io.sockets.in(gameid).emit('active user list', {aul: aul});
+  });
+
 }); // socket listener
 
 /*****************************************************************************
