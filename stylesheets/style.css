@@ -52,6 +52,7 @@ body {
 div#game-post {
   width: 800px;
   text-align: right;
+  margin: 0px 0px 10px 0px;
 }
 
 .game-entry {
@@ -103,18 +104,15 @@ div#game-post {
  * User Listing
  */
  
-#button {
-  display: none;
+
+#active-user-list-wrapper {
   width: 200px;
-  margin: auto;
-/*  border:1px solid #1c1c1c;*/
   float: left;
+  text-align: left;
 }
 
-ul, li {
-  margin:0;
-  padding:0;
-  list-style:none;
+.button {
+
 }
 
 .dropdown-class {
@@ -124,10 +122,15 @@ ul, li {
 .dropdown {
 	display: none;
 	border: 1px solid #1c1c1c;
+  position: absolute;
+  list-style: none;
+  margin: 0px;
+  padding: 0px;
+  width: 150px;
 }
 
 .dropdown li {
-	background-color: #302f2f;
+  background-color: #302f2f;
 }
 
 .dropdown li a {

@@ -21,10 +21,6 @@
 
 <!-- menu bar -->
 <div id="menu-bar" style="height: 30px; background: #000; padding: 5px; margin-bottom: 5px;">
-  <div id="button">
-    <a href="#" class="button dropdown-class">Active Users</a>
-    <ul id="active-user-list" class="dropdown"></ul>
-  </div>
 </div>
 
 <!-- game selection screen -->
@@ -129,6 +125,10 @@
       <textarea id="reply-field"></textarea>
       <br />
       <div id="button_block" style="display: none;">
+        <div id="active-user-list-wrapper">
+          <a href="#" class="button dropdown-class">Active Users</a>
+          <ul id="active-user-list" class="dropdown"></ul>
+        </div>
         <input id="submit-reply" type="submit" value="Send Post" />
         <input id="reset-reply" type="reset" value="Clear" />
       </div>
